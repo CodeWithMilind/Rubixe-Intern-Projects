@@ -1,0 +1,93 @@
+i did all eda 
+------------------------------------------
+Dataset Overview – brief description of each dataset used.
+
+EDA (Exploratory Data Analysis) –
+
+Missing values, nulls, unknowns
+
+Outliers per feature
+
+Target distribution (0 vs 1)
+
+Insights from categorical and numerical variables
+
+Data Cleaning –
+
+Which columns/rows were dropped
+
+Handling of missing values and outliers
+
+Feature Engineering & Encoding – description of transformations done
+
+Modeling –
+
+Models used
+
+Accuracy, AUC, precision, recall, F1-score
+
+Comparison table of models
+
+Challenges & Solutions – issues faced and techniques used
+
+Insights & Recommendations – key findings from the analysis
+
+------------------------------------------------------------------------
+
+but my model is not working good so i decided filter first all cols where target is 0 and the remove null and unknowns valuees that will ensure data will be balanced 
+
+------------------------------------------------------------------------------
+
+Null values: Removing nulls for TARGET=0 ensures only complete data is used for non-defaulters.
+
+Unknowns / placeholders: Cleaning categorical unknowns improves model reliability.
+
+Outliers: Removing extreme numeric values prevents skewed model learning, especially for non-defaulters.
+
+After this cleaning, the dataset for TARGET=0 is more representative and stable.
+
+This step is safe for highly imbalanced datasets because it focuses only on the majority class (non-defaulters), which will reduce noise without losing rare defaulters.
+
+
+XGBoost:
+
+Accuracy: 0.9109080287097313
+AUC: 0.8813247295985226
+
+Classification Report:
+               precision    recall  f1-score   support
+
+           0       0.90      0.99      0.95     19004
+           1       0.95      0.60      0.74      4960
+
+    accuracy                           0.91     23964
+   macro avg       0.93      0.80      0.84     23964
+weighted avg       0.91      0.91      0.90     23964
+
+
+
+
+insights: 
+Minority Class (Defaulters) Performance Improved
+
+Recall improved from 0.04 (CatBoost) → 0.60 (XGBoost)
+
+F1-score improved from 0.07 → 0.74
+
+This is because we handled class imbalance with SMOTE
+
+Majority Class (Non-defaulters) Still Strong
+
+Recall is 0.99, meaning almost all non-defaulters are correctly identified.
+
+Precision-Recall Tradeoff
+
+Precision for defaulters is 0.95 → Model is very confident when predicting someone as a defaulter.
+
+Recall 0.60 → Still some defaulters are missed, but this is much better than before.
+
+Overall Performance
+
+Weighted F1-score ~0.90 → Solid model for production.
+
+Macro-average F1 ~0.84 → Shows the model is balanced between classes.

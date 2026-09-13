@@ -1,0 +1,251 @@
+# Time Series
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+df = pd.read_csv("Clean_data.csv")
+df.drop("Unnamed: 0",axis =1 , inplace=True)
+df.columns
+df.info()
+## Convert Open_Time to datetime
+df["Open_Time"] = pd.to_datetime(df["Open_Time"], errors="coerce")
+
+## Create time index
+df = df.sort_values("Open_Time")
+df = df.set_index("Open_Time")
+
+df.shape
+monthly_counts = df.resample("M").size()       #"M" = group by Month
+
+quarterly_counts = df.resample("Q").size() # "Q" = group by Quarter (Jan–Mar = Q1, etc.)
+
+annual_counts = df.resample("Y").size()# "Y" = group by Year
+
+
+
+# Create one figure with 3 subplots
+plt.figure(figsize=(18, 10))
+
+# 1. Monthly plot
+plt.subplot(3, 1, 1)
+plt.plot(monthly_counts)
+plt.title("Monthly Incident Volume")
+plt.xlabel("Date")
+plt.ylabel("Count")
+plt.grid(True)
+
+# 2. Quarterly plot
+plt.subplot(3, 1, 2)
+plt.plot(quarterly_counts)
+plt.title("Quarterly Incident Volume")
+plt.xlabel("Date")
+plt.ylabel("Count")
+plt.grid(True)
+
+# 3. Yearly plot
+plt.subplot(3, 1, 3)
+plt.plot(annual_counts)
+plt.title("Annual Incident Volume")
+plt.xlabel("Year")
+plt.ylabel("Count")
+plt.grid(True)
+
+plt.tight_layout()
+plt.show()
+##### Monthly-
+###### From 2012–2013 -> almost no incident,
+###### From 2013-2014 -> sudden big rise (8000+,7000+,etc)
+
+
+##### Quaterly-
+###### Same behaviour but more Aggregated
+
+##### Anuanly-
+###### Show a simple rise fall pattern
+
+df.index.year.value_counts().sort_index()
+##### 2012 has 21 incidents means 1-2/months
+##### 2013   -> 24606
+##### 2014   -> 21979
+#### 21 incidents total = useless + noisy + will confuse the model.
+df = df[df.index.year >= 2013]
+monthly_counts = df.resample("M").size()       #"M" = group by Month
+
+# quarterly_counts = df.resample("Q").size() # "Q" = group by Quarter (Jan–Mar = Q1, etc.)
+
+# annual_counts = df.resample("Y").size()# "Y" = group by Year
+
+monthly_counts
+# Visualize
+plt.figure(figsize=(9,5))
+plt.plot(monthly_counts)
+plt.title("Monthly Incident Volume")
+plt.xlabel("Date")
+plt.ylabel("Count")
+plt.grid(True)
+# Train-Test Split for Time-Series
+train = monthly_counts.loc["2013"]
+test = monthly_counts.loc["2014"]
+# Create Lag Features (real feature engineering)
+df_ts = monthly_counts.to_frame(name="count")
+
+df_ts["lag_1"] = df_ts["count"].shift(1)
+df_ts["lag_2"] = df_ts["count"].shift(2)
+df_ts["lag_3"] = df_ts["count"].shift(3)
+
+df_ts["rolling_3"] = df_ts["count"].rolling(3).mean()
+df_ts["rolling_6"] = df_ts["count"].rolling(6).mean()
+
+df_ts = df_ts.dropna()
+
+# Train a Simple Model (RandomForest or XGBoost)
+
+from sklearn.ensemble import RandomForestRegressor
+
+X = df_ts.drop("count", axis=1)
+y = df_ts["count"]
+
+X_train = X.loc["2013"]
+y_train = y.loc["2013"]
+
+X_test = X.loc["2014"]
+y_test = y.loc["2014"]
+
+model = RandomForestRegressor()
+model.fit(X_train, y_train)
+
+pred = model.predict(X_test)
+
+plt.figure(figsize=(12,5))
+plt.plot(y_test.index, y_test, label="Actual")
+plt.plot(y_test.index, pred, label="Predicted")
+plt.legend()
+plt.title("Monthly Incident Forecasting - Actual vs Predicted")
+plt.grid(True)
+plt.show()
+
+daily_counts = df.resample("D").size()       #"D" = group by Daily
+df_ts = daily_counts.to_frame(name="count")
+
+df_ts["lag_1"] = df_ts["count"].shift(1)
+df_ts["lag_7"] = df_ts["count"].shift(7)
+df_ts["lag_30"] = df_ts["count"].shift(30)
+
+df_ts["rolling_7"] = df_ts["count"].rolling(7).mean()
+df_ts["rolling_30"] = df_ts["count"].rolling(30).mean()
+
+df_ts = df_ts.dropna()
+
+# -----------------------------
+from sklearn.ensemble import RandomForestRegressor
+
+X = df_ts.drop("count", axis=1)
+y = df_ts["count"]
+
+X_train = X.loc["2013"]
+y_train = y.loc["2013"]
+
+X_test = X.loc["2014"]
+y_test = y.loc["2014"]
+
+model = RandomForestRegressor()
+model.fit(X_train, y_train)
+
+pred = model.predict(X_test)
+# -----------------------------
+
+plt.figure(figsize=(12,5))
+plt.plot(y_test.index, y_test, label="Actual")
+plt.plot(y_test.index, pred, label="Predicted")
+plt.legend()
+plt.title("Monthly Incident Forecasting - Actual vs Predicted")
+plt.grid(True)
+plt.show()
+
+# Improve Daily Forecasting Model
+daily_counts = df.resample("D").size()
+df_ts = daily_counts.to_frame(name="count")
+
+
+df_ts["rolling_mean_7"] = df_ts["count"].rolling(7).mean()
+df_ts["rolling_mean_30"] = df_ts["count"].rolling(30).mean()
+
+df_ts["rolling_std_7"] = df_ts["count"].rolling(7).std()
+df_ts["rolling_std_30"] = df_ts["count"].rolling(30).std()
+
+# Add Rolling Window Features
+df_ts["rolling_mean_7"] = df_ts["count"].rolling(7).mean()
+df_ts["rolling_mean_30"] = df_ts["count"].rolling(30).mean()
+
+df_ts["rolling_std_7"] = df_ts["count"].rolling(7).std()
+df_ts["rolling_std_30"] = df_ts["count"].rolling(30).std()
+
+# Add Date-Based Features
+df_ts["day_of_week"] = df_ts.index.dayofweek
+df_ts["is_weekend"] = (df_ts.index.dayofweek >= 5).astype(int)
+df_ts["month"] = df_ts.index.month
+
+df_ts = df_ts.dropna()
+
+# Split into TRAIN (2013) and TEST (2014)
+train = df_ts.loc["2013"]
+test  = df_ts.loc["2014"]
+
+X_train = train.drop("count", axis=1)
+y_train = train["count"]
+
+X_test = test.drop("count", axis=1)
+y_test = test["count"]
+
+# Train a Better Model
+from sklearn.ensemble import RandomForestRegressor
+
+model = RandomForestRegressor(
+    n_estimators=300,
+    max_depth=10,
+    random_state=42
+)
+
+model.fit(X_train, y_train)
+pred_daily = model.predict(X_test)
+
+plt.figure(figsize=(12,5))
+plt.plot(y_test.index, y_test, label="Actual")
+plt.plot(y_test.index, pred, label="Predicted")
+plt.legend()
+plt.title("Monthly Incident Forecasting - Actual vs Predicted")
+plt.grid(True)
+plt.show()
+
+df_ts
+# Convert DAILY Predictions → Monthly Forecasts
+pred_series = pd.Series(pred_daily, index=y_test.index)
+
+monthly_pred = pred_series.resample("M").sum()
+monthly_actual = y_test.resample("M").sum()
+
+
+plt.figure(figsize=(12,5))
+plt.plot(monthly_actual.index, monthly_actual, label="Actual Monthly")
+plt.plot(monthly_pred.index, monthly_pred, label="Predicted Monthly")
+plt.title("Monthly Incident Volume Forecast (Converted from Daily Model)")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+
+
+quarterly_actual = y_test.resample("Q").sum()
+quarterly_pred = pred_series.resample("Q").sum()
+# test = df_ts.loc["2014-01-01":"2014-12-31"]
+
+
+plt.figure(figsize=(12,5))
+plt.plot(quarterly_actual.index, quarterly_actual, label="Actual")
+plt.plot(quarterly_pred.index, quarterly_pred, label="Predicted")
+plt.title("Quarterly Incident Volume Forecast")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+print(quarterly_actual)
+print(quarterly_pred)

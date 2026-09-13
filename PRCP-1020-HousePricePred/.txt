@@ -1,0 +1,18 @@
+make library for vizz.....
+
+limit of plot cols --
+  # Safety: Limit max plots
+    max_plots = 100
+
+import warnings
+warnings.filterwarnings('ignore')
+
+outlier function updation
+
+
+# compare nan with others and detect where will Grvl and pave
+# predict Alley 
+
+when use which chart? 
+
+vizz this with powerbi 

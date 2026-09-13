@@ -1,0 +1,60 @@
+----------------------------------------------------------------------------
+
+InvoiceNo
+A unique invoice (bill) number.
+Each invoice represents a transaction.
+If it starts with “C”, it means Credit Note → a cancelled order or return.
+----------------------------------------------------------------------------
+
+
+StockCode
+A unique code for each product/item.
+Example: “85123A” = a specific product.
+----------------------------------------------------------------------------
+
+
+Description
+The name of the product.
+Example: “White Ceramic Mug”
+----------------------------------------------------------------------------
+
+
+Quantity
+Number of units bought in that invoice line.
+Example: 6 = customer bought 6 pieces of the product.
+Negative values = product returned.
+
+    Example:
+
+            A quantity of 6 means:
+            Customer bought 6 units
+
+            A quantity of –6 means:
+            Customer returned 6 units
+----------------------------------------------------------------------------
+
+
+
+UnitPrice
+Price of one unit of the product.
+Example: UnitPrice = 2.55 (means one piece costs £2.55)
+----------------------------------------------------------------------------
+
+
+CustomerID
+Unique ID for each customer.
+Used to:
+Identify repeat customers
+Build customer profiles
+Group customers by spend
+----------------------------------------------------------------------------
+
+
+Country
+Country where the order was placed.
+Used for:
+Regional revenue comparison
+Expansion analysis
+----------------------------------------------------------------------------
+
+

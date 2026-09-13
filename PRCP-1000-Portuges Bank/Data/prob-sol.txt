@@ -1,0 +1,89 @@
+1. heatmap only works on numerical columns- to show relationship between numerical values egg agge , durationn , campaign 
+
+2. portugeese data csv file was in ; format so i used sep=";" parameter in pd.readcsv() 
+
+3. i leaned how to analyze heattmap :
+    
+    correlation rule :
+        | Correlation value                    | Strength | Usefulness      |
+        | ------------------------------------ | -------- | --------------- |
+        |    +0.7 to +1.0    or -0.7 to -1.0   | Strong   | Very useful     |
+        |   +0.3 to +0.7   or   -0.3 to -0.7   | Moderate | Useful          |
+        |   0 to ± 0.3                         | Weak     | Not very useful |
+
+    4. build your model without deleting (not useful columns) if your modeldont work better then try with removing them 
+
+        1️⃣ Start with all columns
+        Train a baseline model (like Logistic Regression or Random Forest).
+        Check its accuracy.
+
+        2️⃣ Then remove low-correlation features
+        Drop those columns with correlation near zero and retrain.
+
+        3️⃣ Compare performance
+
+        If accuracy stays same or improves → removing them helped ✅
+
+        If accuracy drops → keep them back 🔄
+    
+    5. Created a Python function using Seaborn and Matplotlib to automatically plot boxplots of all numerical columns in a dataset for quick outlier detection and data visualization.
+
+    6. duration was removed to avoid data leakage, as it is only known after the call ends. Including it would make the model unrealistically accurate but useless for real-world prediction.
+
+    7. i learned about scaler :
+            StandardScaler - Zscore
+            MinMaxScaler 
+    
+    8. using StandardScaler with logistic accuracy was 89% but 
+            # for class 1 
+            # precision  -> all predicted yes are 68% true
+            # recall -> all predicted yes 25% found
+            # fi-score -> balance between precision and recall / 
+            # if low f1 score -> is not good at model to predict yes  
+            #   confision matrix insights 
+            #  Confusion Matrix:
+            #  [[6144  106] -> [true_no    false_yes] 
+            #  [ 650  221]] -> [false_no    true_yes] 
+
+    9. i used SMOTE to balance both target variables after that accuracy became 77% but
+            
+    10. make a report where all is written 
+             ai tools used for only making functions
+
+    11. make your special analysis function file 
+        upload it in github which anyone can download through pip and use it - get your credit
+        it should be used by importing 
+        try to add features and learn it all flow of working
+        use it only for quick shortcut for analysis but always learn backgroud of it
+        RESUME ---> <add it in your achievements> --> linkedin
+        how can i collab with python and make this global library
+
+    12. in pipeline it is good to encode your data before 
+            if you did not encode data then you should to use ColumnTransformer and that becomes complex to understand 
+
+            encoded data for pipeline is best 
+            decoded data is more complex ---> everything is Same.
+
+    
+  
+---------------------------------------------------------------
+
+look the all file annd search hhow its calculation done in background by statistically
+
+outliers not removed all so if model iis not work good then remove all outliers
+
+    in campaign outlier do this if model not training better : (✅ Either option is fine; I recommend capping so your data size doesn’t reduce too much.)
+
+
+| Issue                                      | Why It Matters                                                         | How to Fix                                                                      |
+| ------------------------------------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| You treated `duration` as a normal feature | It leads to *data leakage* since duration is only known after the call | Drop it before training the model                                               |
+| No encoding technique specified            | ML models can’t read strings                                           | Use Label Encoding for binary vars and One-Hot Encoding for multi-category vars |
+| You only looked at correlation             | Correlation works only for numeric data                                | Also analyze categorical features vs target using `groupby` or `pd.crosstab()`  |
+| No feature scaling                         | Some models (like Logistic, KNN, SVM) require scaling                  | Apply `StandardScaler()` or `MinMaxScaler()`                                    |
+| No class balance check                     | Target `y` is highly imbalanced                                        | Use `SMOTE()` or `class_weight='balanced'`                                      |
+| No model comparison yet                    | The final report requires model comparison                             | Train Logistic Regression, RandomForest, XGBoost, etc. and compare accuracies   |
+| EDA report lacks summary                   | You didn’t conclude findings                                           | Write a clean insight summary after each step                                   |
+
+
+what is pipeline ? 

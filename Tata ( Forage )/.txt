@@ -1,0 +1,11 @@
+create the file then justify all file whyy itt....
+
+report --
+
+ i learned : Line charts  Pie charts  Bar charts and column charts  Treemap- used to see crypto tokens    Dual-axis chart    Area chart  Word Cloud
+ i explored new and new charts  - sankey diagram, 
+ for comparing charts you can use column chart
+scatter chart is a relatiion between x axis and y axis
+Bubble chart is same like scatter 
+
+

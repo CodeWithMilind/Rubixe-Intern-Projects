@@ -1,0 +1,170 @@
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.ensemble import IsolationForest
+
+def handle_outliers(
+    df,
+    cols=None,
+    method="auto",
+    threshold=1.5,
+    visualize=False,
+    n_col=3,
+    random_state=42,
+    verbose=True,
+    force_include=None,
+    skip=None
+):
+    """
+    Smart Outlier Handler v3.1 (Offline Version)
+    --------------------------------------------
+    - Everything from v3
+    - Added `skip` parameter to exclude target or unwanted columns
+    """
+
+    # # 1️⃣ Backup
+    # bkp = df.copy()
+
+    # 2️⃣ Select columns
+    if cols is None:
+        cols = df.select_dtypes(include=np.number).columns.tolist()
+    elif isinstance(cols, str):
+        cols = [cols]
+
+    # Convert skip and force_include to lists if needed
+    if skip is None:
+        skip = []
+    elif isinstance(skip, str):
+        skip = [skip]
+
+    if force_include is None:
+        force_include = []
+    elif isinstance(force_include, str):
+        force_include = [force_include]
+
+    # 3️⃣ Identify skipped columns
+    skip_cols = []
+    reasons = {}
+
+    for c in cols:
+        if c in skip:
+            skip_cols.append(c)
+            reasons[c] = "Skipped manually by user (e.g., target variable)."
+            continue
+
+        if c in force_include:
+            continue
+        if "id" in c.lower():
+            skip_cols.append(c)
+            reasons[c] = "Identifier column — unique values not useful for outlier detection."
+        elif df[c].nunique() < 10:
+            skip_cols.append(c)
+            reasons[c] = f"Categorical/ordinal variable with {df[c].nunique()} unique values."
+        elif df[c].isnull().all():
+            skip_cols.append(c)
+            reasons[c] = "Column contains only missing values."
+        elif df[c].std() == 0:
+            skip_cols.append(c)
+            reasons[c] = "Constant column — all values are same."
+        elif df[c].std() < 1e-6:
+            skip_cols.append(c)
+            reasons[c] = "Very low variance — not meaningful for outlier detection."
+
+    proc_cols = [c for c in cols if c not in skip_cols or c in force_include]
+
+    # 4️⃣ Print skipped columns + reasoning
+    if verbose:
+        print(f"📦 Backup created as variable 'bkp'")
+        print(f"🧮 Processing {len(proc_cols)} columns (Skipped {len(skip_cols)})\n")
+
+        if skip_cols:
+            print("⛔ Skipped Columns (Offline Insights):")
+            for c in skip_cols:
+                print(f"   • {c}: {reasons[c]}")
+            print()
+
+        if force_include:
+            print(f"✅ Force-included columns: {force_include}\n")
+
+    
+    # 5️⃣ IsolationForest mode
+    if method == "isolation":
+        if verbose:
+            print("🌲 Using IsolationForest for multivariate outlier detection...\n")
+        iso = IsolationForest(contamination=0.02, random_state=random_state)
+        preds = iso.fit_predict(df[proc_cols])
+        df = df[preds == 1]
+        if verbose:
+            print(f"✅ Removed {(preds == -1).sum()} multivariate outliers. New shape: {df.shape}")
+        return df
+
+    # 6️⃣ Process each column
+    viz_data = {}
+    for col in proc_cols:
+        if df[col].nunique() <= 1 or df[col].isnull().all():
+            continue
+
+        col_before = df[col].copy()
+        skew_val = df[col].skew()
+        adj_threshold = 3 if abs(skew_val) > 1 else threshold
+
+        Q1, Q3 = df[col].quantile([0.25, 0.75])
+        IQR = Q3 - Q1
+        lower = Q1 - adj_threshold * IQR
+        upper = Q3 + adj_threshold * IQR
+
+        outliers = ((df[col] < lower) | (df[col] > upper)).sum()
+        outlier_percent = outliers / len(df) * 100
+
+        # auto-decide method
+        if method == "auto":
+            if len(df) < 10000 or outlier_percent > 10:
+                mode_used = "cap"
+            else:
+                mode_used = "remove"
+        else:
+            mode_used = method
+
+        if verbose:
+            print(f"\n📊 Column: {col}")
+            print(f"   Skew: {skew_val:.2f}, Outliers: {outliers} ({outlier_percent:.2f}%)")
+            print(f"   Method used: {mode_used.upper()}, Threshold: {adj_threshold}")
+
+        # Apply handling
+        if mode_used == "remove":
+            df = df[(df[col] >= lower) & (df[col] <= upper)]
+        elif mode_used == "cap":
+            df[col] = np.where(df[col] < lower, lower,
+                               np.where(df[col] > upper, upper, df[col]))
+
+        if visualize:
+            viz_data[col] = (col_before, df[col].copy())
+
+    # 7️⃣ Combined visualization
+    if visualize and viz_data:
+        n = len(viz_data)
+        n_rows = int(np.ceil(n / n_col))
+        fig, axes = plt.subplots(n_rows, n_col, figsize=(5*n_col, 4*n_rows))
+        axes = axes.flatten()
+        i = 0
+        for col, (before, after) in viz_data.items():
+            data = pd.DataFrame({'Before': before, 'After': after})
+            sns.boxplot(data=data, ax=axes[i])
+            axes[i].set_title(col)
+            i += 1
+        for j in range(i, len(axes)):
+            axes[j].set_visible(False)
+        plt.tight_layout()
+        plt.suptitle("📊 Before vs After Outlier Handling", fontsize=16, y=1.02)
+        plt.show()
+
+    if verbose:
+        print("\n✅ Outlier handling complete!")
+        print(f"Final dataset shape: {df.shape}")
+
+    return df
+
+--------------------------------
+
+
